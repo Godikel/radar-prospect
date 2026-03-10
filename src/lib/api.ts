@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 const MOCK_ORGS: Org[] = [
   {
     id: 'org-1',
-    name: 'BetterPlace',
+    name: 'Skillbetter',
     subtitle: 'LMS Sales',
     config: {
       ctas: [

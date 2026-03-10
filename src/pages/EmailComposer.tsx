@@ -37,7 +37,7 @@ Best regards,
     subject: 'Quick follow-up — {{company}} L&D',
     body: `Hi {{name}},
 
-I wanted to follow up on my previous email about how BetterPlace can help {{company}} with training and development.
+I wanted to follow up on my previous email about how Skillbetter can help {{company}} with training and development.
 
 We've helped similar companies reduce training costs by 40% while improving completion rates.
 

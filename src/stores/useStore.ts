@@ -42,7 +42,7 @@ interface Store {
 export const useStore = create<Store>((set, get) => ({
   user: null,
   login: (email: string) => {
-    if (email === 'hardik.goel@betterplace.co.in') {
+    if (email === 'hardik.goel@skillbetter.co.in') {
       set({ user: { email, name: 'Hardik Goel' } });
       return true;
     }

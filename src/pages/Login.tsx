@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Rocket, AlertCircle } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('hardik.goel@betterplace.co.in');
+  const [email, setEmail] = useState('hardik.goel@skillbetter.co.in');
   const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
   const login = useStore(s => s.login);
@@ -25,7 +25,7 @@ const Login = () => {
     if (success) {
       navigate('/dashboard');
     } else {
-      setError('Invalid credentials. Use hardik.goel@betterplace.co.in');
+      setError('Invalid credentials. Use hardik.goel@skillbetter.co.in');
     }
   };
 
@@ -37,7 +37,7 @@ const Login = () => {
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <Rocket className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">BetterPlace</h1>
+            <h1 className="text-2xl font-bold text-foreground">Skillbetter</h1>
           </div>
           <p className="text-sm text-muted-foreground">LeadGen Platform — Sign in to continue</p>
         </CardHeader>
@@ -51,7 +51,7 @@ const Login = () => {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="hardik.goel@betterplace.co.in" value={email} onChange={e => setEmail(e.target.value)} />
+              <Input id="email" type="email" placeholder="hardik.goel@skillbetter.co.in" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -60,7 +60,7 @@ const Login = () => {
             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               Sign In
             </Button>
-            <p className="text-xs text-center text-muted-foreground">Demo: hardik.goel@betterplace.co.in / any password</p>
+            <p className="text-xs text-center text-muted-foreground">Demo: hardik.goel@skillbetter.co.in / any password</p>
           </form>
         </CardContent>
       </Card>
