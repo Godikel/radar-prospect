@@ -37,7 +37,7 @@ const Login = () => {
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <Rocket className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">BetterPlace</h1>
+            <h1 className="text-2xl font-bold text-foreground">Skillbetter</h1>
           </div>
           <p className="text-sm text-muted-foreground">LeadGen Platform — Sign in to continue</p>
         </CardHeader>
