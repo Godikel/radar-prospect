@@ -74,3 +74,23 @@ export interface EnrichmentResponse {
   credits_used: number;
   results: EnrichmentResult[];
 }
+
+export interface OutreachPoc {
+  poc: POC;
+  emailSent: boolean;
+  sentAt?: string;
+}
+
+export interface OutreachRecord {
+  id: string;
+  company: Company;
+  pocs: OutreachPoc[];
+  emailSubject: string;
+  emailBody: string;
+  sentAt: string;
+  replyReceived: boolean;
+  replyReceivedAt?: string;
+  followUpDate?: string;
+  followUpTemplate?: string;
+  notes?: string;
+}

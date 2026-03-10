@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Org, Company, User } from '@/types';
+import type { Org, Company, User, OutreachRecord, OutreachPoc } from '@/types';
 
 interface Store {
   user: User | null;
