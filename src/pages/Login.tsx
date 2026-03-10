@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Rocket, AlertCircle } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('hardik.goel@betterplace.co.in');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
   const login = useStore(s => s.login);
   const navigate = useNavigate();
