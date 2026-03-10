@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/stores/useStore';
 import { api } from '@/lib/api';
 import Header from '@/components/layout/Header';
@@ -15,14 +15,19 @@ const Dashboard = () => {
   const setCompanies = useStore(s => s.setCompanies);
   const companies = useStore(s => s.companies);
   const isGenerating = useStore(s => s.isGenerating);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadCompanies = async () => {
     if (!selectedOrg) return;
+    setIsLoading(true);
     try {
-      const res = await api.get<{ companies: any[] }>(`/api/orgs/${selectedOrg.id}/companies?include_pocs=true`);
+      const res = await api.getOrgCompanies(selectedOrg.id);
       setCompanies(res.companies);
-    } catch {
+    } catch (e) {
+      console.error('Failed to load companies:', e);
       toast.error('Failed to load companies');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,16 +46,16 @@ const Dashboard = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-muted-foreground">Companies & POCs</h2>
-              <Button variant="ghost" size="sm" onClick={loadCompanies} disabled={isGenerating}>
-                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              <Button variant="ghost" size="sm" onClick={loadCompanies} disabled={isGenerating || isLoading}>
+                {(isGenerating || isLoading) ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 <span className="ml-1">Refresh</span>
               </Button>
             </div>
 
-            {isGenerating ? (
+            {isGenerating || isLoading ? (
               <div className="text-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent mb-3" />
-                <p className="font-medium text-foreground">Generating leads...</p>
+                <p className="font-medium text-foreground">{isGenerating ? 'Generating leads...' : 'Loading companies...'}</p>
                 <p className="text-sm text-muted-foreground mt-1">This may take a few moments</p>
               </div>
             ) : (

@@ -2,6 +2,34 @@ import type { Org, Company, GenerationRequest, EnrichmentResponse } from '@/type
 
 const API_BASE_URL = 'https://leadgen-backend-production-4e93.up.railway.app/api';
 
+function parseWorkforceSize(size?: string): number {
+  if (!size) return 0;
+  const match = size.replace(/,/g, '').match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+function mapCompany(raw: any): Company {
+  return {
+    id: String(raw.id),
+    name: raw.company_name ?? raw.name ?? 'Unknown',
+    segment: raw.segment ?? 'SME',
+    location: raw.geography ?? raw.location ?? 'Unknown',
+    employee_count: raw.employee_count ?? parseWorkforceSize(raw.workforce_size),
+    industry: raw.industry ?? raw.sub_industry ?? 'Unknown',
+    generated_at: raw.created_at ?? raw.generated_at ?? new Date().toISOString(),
+    pocs: (raw.pocs ?? []).map((p: any) => ({
+      id: String(p.id),
+      name: p.name ?? 'Unknown',
+      title: p.title ?? '',
+      email: p.email,
+      phone: p.phone,
+      linkedin_url: p.linkedin_url,
+      enrichment_status: p.enrichment_status ?? 'not_enriched',
+      company_id: String(raw.id),
+    })),
+  };
+}
+
 class APIClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -29,8 +57,11 @@ class APIClient {
   }
 
   // GET /api/orgs/:id/companies?include_pocs=true
-  getOrgCompanies(id: string): Promise<{ companies: Company[] }> {
-    return this.request<{ companies: Company[] }>(`/orgs/${id}/companies?include_pocs=true`);
+  async getOrgCompanies(id: string): Promise<{ companies: Company[] }> {
+    const res = await this.request<{ companies: any[] }>(`/orgs/${id}/companies?include_pocs=true`);
+    console.log('Raw companies response:', res);
+    const companies = (res?.companies ?? []).map(mapCompany);
+    return { companies };
   }
 
   // GET /api/orgs/:id/stats
