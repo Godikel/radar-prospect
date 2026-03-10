@@ -51,7 +51,7 @@ const Login = () => {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="hardik.goel@betterplace.co.in" value={email} onChange={e => setEmail(e.target.value)} />
+              <Input id="email" type="email" placeholder="hardik.goel@skillbetter.co.in" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
