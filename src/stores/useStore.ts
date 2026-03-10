@@ -31,6 +31,12 @@ interface Store {
   // Email composer state
   emailPocIds: string[];
   setEmailPocIds: (ids: string[]) => void;
+
+  // Outreach tracking
+  outreachRecords: OutreachRecord[];
+  addOutreachRecord: (record: OutreachRecord) => void;
+  updateOutreachRecord: (id: string, updates: Partial<OutreachRecord>) => void;
+  removeCompaniesFromLeads: (companyIds: string[]) => void;
 }
 
 export const useStore = create<Store>((set, get) => ({
