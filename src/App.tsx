@@ -28,6 +28,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/emails" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
+          <Route path="/outreach" element={<ProtectedRoute><Outreach /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
