@@ -41,7 +41,7 @@ const CTAButtons = () => {
     <div className="space-y-2">
       <h2 className="text-sm font-medium text-muted-foreground">Quick Actions</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {selectedOrg.config.ctas.map(cta => (
+        {(selectedOrg.config?.ctas ?? []).map(cta => (
           <Card key={cta.id} className="border-border hover:border-accent/50 transition-colors">
             <CardContent className="p-4 flex flex-col gap-3">
               <div className="flex items-center gap-2 text-accent">
