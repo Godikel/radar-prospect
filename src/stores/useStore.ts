@@ -104,4 +104,15 @@ export const useStore = create<Store>((set, get) => ({
 
   emailPocIds: [],
   setEmailPocIds: (ids) => set({ emailPocIds: ids }),
+
+  outreachRecords: [],
+  addOutreachRecord: (record) => set({ outreachRecords: [...get().outreachRecords, record] }),
+  updateOutreachRecord: (id, updates) => {
+    set({
+      outreachRecords: get().outreachRecords.map(r => r.id === id ? { ...r, ...updates } : r)
+    });
+  },
+  removeCompaniesFromLeads: (companyIds) => {
+    set({ companies: get().companies.filter(c => !companyIds.includes(c.id)) });
+  },
 }));
