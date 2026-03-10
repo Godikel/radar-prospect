@@ -60,7 +60,7 @@ const Login = () => {
             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               Sign In
             </Button>
-            <p className="text-xs text-center text-muted-foreground">Demo: hardik.goel@betterplace.co.in / any password</p>
+            <p className="text-xs text-center text-muted-foreground">Demo: hardik.goel@skillbetter.co.in / any password</p>
           </form>
         </CardContent>
       </Card>

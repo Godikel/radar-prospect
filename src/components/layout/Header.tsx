@@ -29,7 +29,7 @@ const Header = () => {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <Rocket className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-bold text-lg text-foreground hidden sm:block">BetterPlace LeadGen</span>
+          <span className="font-bold text-lg text-foreground hidden sm:block">Skillbetter LeadGen</span>
         </div>
         {user && (
           <nav className="flex items-center gap-0.5">
