@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Org, Company, User } from '@/types';
+import type { Org, Company, User, OutreachRecord, OutreachPoc } from '@/types';
 
 interface Store {
   user: User | null;
@@ -31,6 +31,12 @@ interface Store {
   // Email composer state
   emailPocIds: string[];
   setEmailPocIds: (ids: string[]) => void;
+
+  // Outreach tracking
+  outreachRecords: OutreachRecord[];
+  addOutreachRecord: (record: OutreachRecord) => void;
+  updateOutreachRecord: (id: string, updates: Partial<OutreachRecord>) => void;
+  removeCompaniesFromLeads: (companyIds: string[]) => void;
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -98,4 +104,15 @@ export const useStore = create<Store>((set, get) => ({
 
   emailPocIds: [],
   setEmailPocIds: (ids) => set({ emailPocIds: ids }),
+
+  outreachRecords: [],
+  addOutreachRecord: (record) => set({ outreachRecords: [...get().outreachRecords, record] }),
+  updateOutreachRecord: (id, updates) => {
+    set({
+      outreachRecords: get().outreachRecords.map(r => r.id === id ? { ...r, ...updates } : r)
+    });
+  },
+  removeCompaniesFromLeads: (companyIds) => {
+    set({ companies: get().companies.filter(c => !companyIds.includes(c.id)) });
+  },
 }));
