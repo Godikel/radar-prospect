@@ -66,7 +66,7 @@ const CompanyTable = () => {
                   <span className="text-xs text-muted-foreground">• {company.location}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
-                  {company.employee_count.toLocaleString()} employees • {company.industry}
+                  {(company.employee_count ?? 0).toLocaleString()} employees • {company.industry ?? 'Unknown'}
                   {!isExpanded && <span className="ml-2">• {company.pocs.length} POCs ({enrichedCount} enriched)</span>}
                 </div>
               </div>
