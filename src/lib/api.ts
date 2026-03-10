@@ -57,8 +57,11 @@ class APIClient {
   }
 
   // GET /api/orgs/:id/companies?include_pocs=true
-  getOrgCompanies(id: string): Promise<{ companies: Company[] }> {
-    return this.request<{ companies: Company[] }>(`/orgs/${id}/companies?include_pocs=true`);
+  async getOrgCompanies(id: string): Promise<{ companies: Company[] }> {
+    const res = await this.request<{ companies: any[] }>(`/orgs/${id}/companies?include_pocs=true`);
+    console.log('Raw companies response:', res);
+    const companies = (res?.companies ?? []).map(mapCompany);
+    return { companies };
   }
 
   // GET /api/orgs/:id/stats
