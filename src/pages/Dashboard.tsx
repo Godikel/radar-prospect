@@ -15,14 +15,19 @@ const Dashboard = () => {
   const setCompanies = useStore(s => s.setCompanies);
   const companies = useStore(s => s.companies);
   const isGenerating = useStore(s => s.isGenerating);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadCompanies = async () => {
     if (!selectedOrg) return;
+    setIsLoading(true);
     try {
-      const res = await api.get<{ companies: any[] }>(`/api/orgs/${selectedOrg.id}/companies?include_pocs=true`);
+      const res = await api.getOrgCompanies(selectedOrg.id);
       setCompanies(res.companies);
-    } catch {
+    } catch (e) {
+      console.error('Failed to load companies:', e);
       toast.error('Failed to load companies');
+    } finally {
+      setIsLoading(false);
     }
   };
 
