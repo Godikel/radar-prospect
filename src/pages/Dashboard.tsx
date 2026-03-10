@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/stores/useStore';
 import { api } from '@/lib/api';
 import Header from '@/components/layout/Header';
