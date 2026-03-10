@@ -25,7 +25,7 @@ const Login = () => {
     if (success) {
       navigate('/dashboard');
     } else {
-      setError('Invalid credentials. Use hardik.goel@betterplace.co.in');
+      setError('Invalid credentials. Use hardik.goel@skillbetter.co.in');
     }
   };
 
