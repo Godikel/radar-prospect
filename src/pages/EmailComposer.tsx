@@ -107,8 +107,55 @@ const EmailComposer = () => {
         body,
         template_variables: { sender_name: 'Hardik Goel', sender_phone: '+91 8005652382' },
       });
+
+      // Group POCs by company and create outreach records
+      const companyMap = new Map<string, typeof companies[0]>();
+      const allSelectedPocs = allPocs.filter(p => emailPocIds.includes(p.id));
+      allSelectedPocs.forEach(poc => {
+        const comp = companies.find(c => c.pocs.some(pp => pp.id === poc.id));
+        if (comp && !companyMap.has(comp.id)) companyMap.set(comp.id, comp);
+      });
+
+      const addOutreachRecord = useStore.getState().addOutreachRecord;
+      const removeCompaniesFromLeads = useStore.getState().removeCompaniesFromLeads;
+      const companyIds: string[] = [];
+
+      companyMap.forEach(comp => {
+        const compPocs = allSelectedPocs.filter(p => comp.pocs.some(pp => pp.id === p.id));
+        const outreachPocs = comp.pocs.map(poc => ({
+          poc,
+          emailSent: compPocs.some(cp => cp.id === poc.id && poc.enrichment_status === 'enriched'),
+          sentAt: new Date().toISOString(),
+        }));
+
+        const replaceVarsForPoc = (text: string, poc: typeof comp.pocs[0]) => {
+          return text
+            .replace(/\{\{name\}\}/g, poc.name.split(' ')[0])
+            .replace(/\{\{company\}\}/g, comp.name)
+            .replace(/\{\{title\}\}/g, poc.title)
+            .replace(/\{\{sender_name\}\}/g, 'Hardik Goel')
+            .replace(/\{\{sender_phone\}\}/g, '+91 8005652382');
+        };
+
+        const firstEnrichedPoc = compPocs.find(p => p.enrichment_status === 'enriched') || compPocs[0];
+
+        addOutreachRecord({
+          id: crypto.randomUUID(),
+          company: comp,
+          pocs: outreachPocs,
+          emailSubject: replaceVarsForPoc(subject, firstEnrichedPoc),
+          emailBody: replaceVarsForPoc(body, firstEnrichedPoc),
+          sentAt: new Date().toISOString(),
+          replyReceived: false,
+          followUpDate: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0],
+        });
+        companyIds.push(comp.id);
+      });
+
+      removeCompaniesFromLeads(companyIds);
+
       toast.success(`Sent ${res.sent_count} emails successfully!`);
-      navigate('/dashboard');
+      navigate('/outreach');
     } catch {
       toast.error('Failed to send emails.');
     } finally {
