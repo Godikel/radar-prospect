@@ -69,8 +69,8 @@ const EmailComposer = () => {
   const emailPocIds = useStore(s => s.emailPocIds);
 
   const allPocs = companies.flatMap(c => c.pocs);
-  const enrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status === 'enriched');
-  const notEnrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status !== 'enriched');
+  const enrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status === 'enriched' && (p.preferred_email || p.email));
+  const notEnrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && (!p.preferred_email && !p.email || p.enrichment_status !== 'enriched'));
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>('initial');
   const [subject, setSubject] = useState(TEMPLATES[0].subject);
@@ -96,6 +96,8 @@ const EmailComposer = () => {
       .replace(/\{\{sender_name\}\}/g, 'Hardik Goel')
       .replace(/\{\{sender_phone\}\}/g, '+91 8005652382');
   };
+
+  const pocEmail = (poc: typeof allPocs[0]) => poc.preferred_email || poc.email || '';
 
   const handleSend = async () => {
     if (enrichedPocs.length === 0) return;
@@ -263,7 +265,7 @@ const EmailComposer = () => {
 
               {previewPoc ? (
                 <div className="space-y-3 text-sm">
-                  <div className="text-muted-foreground text-xs">To: {previewPoc.email}</div>
+                  <div className="text-muted-foreground text-xs">To: {pocEmail(previewPoc)}</div>
                   <div className="font-semibold text-foreground">{replaceVars(subject)}</div>
                   <div className="whitespace-pre-wrap text-foreground/80 leading-relaxed border-t border-border pt-3">
                     {replaceVars(body)}

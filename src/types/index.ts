@@ -30,6 +30,10 @@ export interface POC {
   title: string;
   email?: string;
   phone?: string;
+  emails?: string[];
+  phones?: string[];
+  preferred_email?: string;
+  preferred_phone?: string;
   linkedin_url?: string;
   enrichment_status: EnrichmentStatus;
   company_id: string;

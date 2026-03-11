@@ -21,8 +21,12 @@ function mapCompany(raw: any): Company {
       id: String(p.id),
       name: p.name ?? 'Unknown',
       title: p.title ?? '',
-      email: p.email,
-      phone: p.phone,
+      email: p.preferred_email ?? p.email,
+      phone: p.preferred_phone ?? p.phone,
+      emails: p.emails ?? (p.email ? [p.email] : []),
+      phones: p.phones ?? (p.phone ? [p.phone] : []),
+      preferred_email: p.preferred_email ?? p.email,
+      preferred_phone: p.preferred_phone ?? p.phone,
       linkedin_url: p.linkedin_url,
       enrichment_status: p.enrichment_status ?? 'not_enriched',
       company_id: String(raw.id),
@@ -85,9 +89,18 @@ class APIClient {
     });
   }
 
+  // POST /api/pocs/:id/set-preferred
+  setPreferred(pocId: string, type: 'email' | 'phone', value: string): Promise<{ success: boolean }> {
+    const payload = type === 'email' ? { preferred_email: value } : { preferred_phone: value };
+    return this.request(`/pocs/${pocId}/set-preferred`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // POST /api/generate/full-pipeline
   generateLeads(data: GenerationRequest): Promise<{ success: boolean; stats: { companies: number; pocs: number }; companies: Company[] }> {
-    return this.request('/generate/full-pipeline', {
+    return this.request<{ success: boolean; stats: { companies: number; pocs: number }; companies: any[] }>('/generate/full-pipeline', {
       method: 'POST',
       body: JSON.stringify(data),
     });
