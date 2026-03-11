@@ -97,6 +97,8 @@ const EmailComposer = () => {
       .replace(/\{\{sender_phone\}\}/g, '+91 8005652382');
   };
 
+  const pocEmail = (poc: typeof allPocs[0]) => poc.preferred_email || poc.email || '';
+
   const handleSend = async () => {
     if (enrichedPocs.length === 0) return;
     setIsSending(true);
