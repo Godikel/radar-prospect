@@ -91,7 +91,7 @@ class APIClient {
 
   // POST /api/generate/full-pipeline
   generateLeads(data: GenerationRequest): Promise<{ success: boolean; stats: { companies: number; pocs: number }; companies: Company[] }> {
-    return this.request('/generate/full-pipeline', {
+    return this.request<{ success: boolean; stats: { companies: number; pocs: number }; companies: any[] }>('/generate/full-pipeline', {
       method: 'POST',
       body: JSON.stringify(data),
     });
