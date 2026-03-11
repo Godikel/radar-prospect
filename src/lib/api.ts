@@ -89,6 +89,15 @@ class APIClient {
     });
   }
 
+  // POST /api/pocs/:id/set-preferred
+  setPreferred(pocId: string, type: 'email' | 'phone', value: string): Promise<{ success: boolean }> {
+    const payload = type === 'email' ? { preferred_email: value } : { preferred_phone: value };
+    return this.request(`/pocs/${pocId}/set-preferred`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // POST /api/generate/full-pipeline
   generateLeads(data: GenerationRequest): Promise<{ success: boolean; stats: { companies: number; pocs: number }; companies: Company[] }> {
     return this.request<{ success: boolean; stats: { companies: number; pocs: number }; companies: any[] }>('/generate/full-pipeline', {

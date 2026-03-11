@@ -27,17 +27,22 @@ const ActionBar = () => {
     setIsEnriching(true);
     try {
       const res = await api.post<any>('/api/pocs/enrich', { poc_ids: pocIds });
-      // Update companies with enrichment results
       const updatedCompanies = companies.map(c => ({
         ...c,
         pocs: c.pocs.map(p => {
           const result = res.results?.find((r: any) => r.poc_id === p.id);
           if (!result) return p;
+          const emails = result.emails ?? (result.email ? [result.email] : p.emails ?? []);
+          const phones = result.phones ?? (result.phone ? [result.phone] : p.phones ?? []);
           return {
             ...p,
             enrichment_status: result.success ? 'enriched' as const : 'failed' as const,
-            email: result.email || p.email,
-            phone: result.phone || p.phone,
+            emails,
+            phones,
+            preferred_email: result.preferred_email ?? emails[0] ?? p.preferred_email,
+            preferred_phone: result.preferred_phone ?? phones[0] ?? p.preferred_phone,
+            email: result.preferred_email ?? result.email ?? emails[0] ?? p.email,
+            phone: result.preferred_phone ?? result.phone ?? phones[0] ?? p.phone,
           };
         })
       }));

@@ -265,7 +265,7 @@ const EmailComposer = () => {
 
               {previewPoc ? (
                 <div className="space-y-3 text-sm">
-                  <div className="text-muted-foreground text-xs">To: {previewPoc.email}</div>
+                  <div className="text-muted-foreground text-xs">To: {pocEmail(previewPoc)}</div>
                   <div className="font-semibold text-foreground">{replaceVars(subject)}</div>
                   <div className="whitespace-pre-wrap text-foreground/80 leading-relaxed border-t border-border pt-3">
                     {replaceVars(body)}
