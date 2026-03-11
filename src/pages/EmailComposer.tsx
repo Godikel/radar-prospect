@@ -69,8 +69,8 @@ const EmailComposer = () => {
   const emailPocIds = useStore(s => s.emailPocIds);
 
   const allPocs = companies.flatMap(c => c.pocs);
-  const enrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status === 'enriched');
-  const notEnrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status !== 'enriched');
+  const enrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && p.enrichment_status === 'enriched' && (p.preferred_email || p.email));
+  const notEnrichedPocs = allPocs.filter(p => emailPocIds.includes(p.id) && (!p.preferred_email && !p.email || p.enrichment_status !== 'enriched'));
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>('initial');
   const [subject, setSubject] = useState(TEMPLATES[0].subject);
