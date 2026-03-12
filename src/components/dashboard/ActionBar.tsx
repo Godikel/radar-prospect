@@ -22,36 +22,57 @@ const ActionBar = () => {
   const enrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'enriched');
   const notEnrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'not_enriched');
 
+  const selectedOrg = useStore(s => s.selectedOrg);
+
+  const refreshCompanies = async () => {
+    if (!selectedOrg) return;
+    try {
+      const res = await api.getOrgCompanies(selectedOrg.id);
+      setCompanies(res.companies);
+    } catch {
+      // silent refresh failure
+    }
+  };
+
   const handleEnrich = async () => {
     const pocIds = notEnrichedPocs.map(p => p.id);
     if (pocIds.length === 0) return;
     setIsEnriching(true);
     try {
       const res = await api.post<any>('/api/pocs/enrich', { poc_ids: pocIds });
-      const updatedCompanies = companies.map(c => ({
-        ...c,
-        pocs: c.pocs.map(p => {
-          const result = res.results?.find((r: any) => r.poc_id === p.id);
-          if (!result) return p;
-          const emails = result.emails ?? (result.email ? [result.email] : p.emails ?? []);
-          const phones = result.phones ?? (result.phone ? [result.phone] : p.phones ?? []);
-          return {
-            ...p,
-            enrichment_status: result.success ? 'enriched' as const : 'failed' as const,
-            emails,
-            phones,
-            preferred_email: result.preferred_email ?? emails[0] ?? p.preferred_email,
-            preferred_phone: result.preferred_phone ?? phones[0] ?? p.preferred_phone,
-            email: result.preferred_email ?? result.email ?? emails[0] ?? p.email,
-            phone: result.preferred_phone ?? result.phone ?? phones[0] ?? p.phone,
-          };
-        })
-      }));
-      setCompanies(updatedCompanies);
-      toast.success(`Enriched ${res.enriched_count} POCs. ${res.failed_count} failed. Credits used: ${res.credits_used}`);
+      toast.success(`Enrichment started for ${pocIds.length} POCs. Refreshing data...`);
+
+      // Poll for updated data since enrichment is async
+      let attempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = 3000;
+
+      const poll = async () => {
+        attempts++;
+        await refreshCompanies();
+        
+        // Check if enrichment data has arrived
+        const updatedCompanies = useStore.getState().companies;
+        const enrichedPocIds = new Set(pocIds);
+        const allDone = updatedCompanies
+          .flatMap(c => c.pocs)
+          .filter(p => enrichedPocIds.has(p.id))
+          .every(p => p.enrichment_status === 'enriched' || p.enrichment_status === 'failed');
+
+        if (allDone) {
+          toast.success('Enrichment complete — contact data updated.');
+          setIsEnriching(false);
+        } else if (attempts < maxAttempts) {
+          setTimeout(poll, pollInterval);
+        } else {
+          toast.info('Enrichment is still processing. Hit Refresh to check for updates.');
+          setIsEnriching(false);
+        }
+      };
+
+      setTimeout(poll, pollInterval);
     } catch {
       toast.error('Enrichment failed.');
-    } finally {
       setIsEnriching(false);
     }
   };
