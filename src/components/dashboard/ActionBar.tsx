@@ -23,7 +23,6 @@ const ActionBar = () => {
   const enrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'enriched');
   const notEnrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'not_enriched');
 
-  const selectedOrg = useStore(s => s.selectedOrg);
 
   const refreshCompanies = async () => {
     if (!selectedOrg) return;
