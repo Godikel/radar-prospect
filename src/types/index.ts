@@ -25,7 +25,7 @@ export interface Org {
   config: OrgConfig;
 }
 
-export type EnrichmentStatus = 'not_enriched' | 'enriched' | 'failed';
+export type EnrichmentStatus = 'not_enriched' | 'enriched' | 'failed' | 'pending' | 'no_contact';
 
 export interface POC {
   id: string;
@@ -40,6 +40,7 @@ export interface POC {
   preferred_phone?: string;
   linkedin_url?: string;
   enrichment_status: EnrichmentStatus;
+  enrichment_error?: string;
   company_id: string;
 }
 

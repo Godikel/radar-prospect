@@ -11,7 +11,7 @@ const EnrichmentBanner = () => {
 
   const allPocs = companies.flatMap(c => c.pocs);
   const tracked = allPocs.filter(p => pendingPocIds.includes(p.id));
-  const doneCount = tracked.filter(p => p.enrichment_status === 'enriched' || p.enrichment_status === 'failed').length;
+  const doneCount = tracked.filter(p => p.enrichment_status === 'enriched' || p.enrichment_status === 'failed' || p.enrichment_status === 'no_contact').length;
 
   return (
     <Alert className="border-accent/50 bg-accent/5">

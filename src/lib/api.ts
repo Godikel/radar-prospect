@@ -17,21 +17,37 @@ function mapCompany(raw: any): Company {
     employee_count: raw.employee_count ?? parseWorkforceSize(raw.workforce_size),
     industry: raw.industry ?? raw.sub_industry ?? 'Unknown',
     generated_at: raw.created_at ?? raw.generated_at ?? new Date().toISOString(),
-    pocs: (raw.pocs ?? []).map((p: any) => ({
-      id: String(p.id),
-      name: p.poc_name ?? p.name ?? 'Unknown',
-      title: p.poc_title ?? p.title ?? '',
-      department: p.poc_department ?? p.department,
-      email: p.preferred_email ?? p.email,
-      phone: p.preferred_phone ?? p.phone,
-      emails: p.emails ?? (p.email ? [p.email] : []),
-      phones: p.phones ?? (p.phone ? [p.phone] : []),
-      preferred_email: p.preferred_email ?? p.email,
-      preferred_phone: p.preferred_phone ?? p.phone,
-      linkedin_url: p.poc_linkedin ?? p.linkedin_url,
-      enrichment_status: p.enriched ? 'enriched' : (p.enrichment_failed ? 'failed' : (p.enrichment_status ?? 'not_enriched')),
-      company_id: String(raw.id),
-    })),
+    pocs: (raw.pocs ?? []).map((p: any) => {
+      const enrichmentError = p.enrichment_error ?? null;
+      const isEnriched = !!p.enriched;
+      const isFailed = !!p.enrichment_failed;
+      const isNoContact = enrichmentError?.includes('No contact information found');
+      const isPending = enrichmentError?.includes('Pending:');
+
+      let enrichment_status: string;
+      if (isEnriched) enrichment_status = 'enriched';
+      else if (isNoContact) enrichment_status = 'no_contact';
+      else if (isFailed) enrichment_status = 'failed';
+      else if (isPending) enrichment_status = 'pending';
+      else enrichment_status = 'not_enriched';
+
+      return {
+        id: String(p.id),
+        name: p.poc_name ?? p.name ?? 'Unknown',
+        title: p.poc_title ?? p.title ?? '',
+        department: p.poc_department ?? p.department,
+        email: p.preferred_email ?? p.email,
+        phone: p.preferred_phone ?? p.phone,
+        emails: p.emails ?? (p.email ? [p.email] : []),
+        phones: p.phones ?? (p.phone ? [p.phone] : []),
+        preferred_email: p.preferred_email ?? p.email,
+        preferred_phone: p.preferred_phone ?? p.phone,
+        linkedin_url: p.poc_linkedin ?? p.linkedin_url,
+        enrichment_status,
+        enrichment_error: enrichmentError,
+        company_id: String(raw.id),
+      };
+    }),
   };
 }
 
