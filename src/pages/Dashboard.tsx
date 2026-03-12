@@ -7,6 +7,7 @@ import CTAButtons from '@/components/dashboard/CTAButtons';
 import CompanyTable from '@/components/dashboard/CompanyTable';
 import ActionBar from '@/components/dashboard/ActionBar';
 import ArchivedBanner from '@/components/dashboard/ArchivedBanner';
+import EnrichmentBanner from '@/components/dashboard/EnrichmentBanner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -53,6 +54,7 @@ const Dashboard = () => {
         {selectedOrg && archived && <ArchivedBanner />}
 
         {!archived && <CTAButtons />}
+        {!archived && <EnrichmentBanner />}
 
         {selectedOrg && (
           <div className="space-y-3">

@@ -27,6 +27,8 @@ interface Store {
   setIsGenerating: (v: boolean) => void;
   isEnriching: boolean;
   setIsEnriching: (v: boolean) => void;
+  pendingEnrichPocIds: string[];
+  setPendingEnrichPocIds: (ids: string[]) => void;
 
   // Email composer state
   emailPocIds: string[];
@@ -101,6 +103,8 @@ export const useStore = create<Store>((set, get) => ({
   setIsGenerating: (v) => set({ isGenerating: v }),
   isEnriching: false,
   setIsEnriching: (v) => set({ isEnriching: v }),
+  pendingEnrichPocIds: [],
+  setPendingEnrichPocIds: (ids) => set({ pendingEnrichPocIds: ids }),
 
   emailPocIds: [],
   setEmailPocIds: (ids) => set({ emailPocIds: ids }),
