@@ -31,6 +31,7 @@ export interface POC {
   id: string;
   name: string;
   title: string;
+  department?: string;
   email?: string;
   phone?: string;
   emails?: string[];
