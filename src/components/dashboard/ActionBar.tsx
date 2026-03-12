@@ -12,6 +12,7 @@ const ActionBar = () => {
   const isEnriching = useStore(s => s.isEnriching);
   const setIsEnriching = useStore(s => s.setIsEnriching);
   const setCompanies = useStore(s => s.setCompanies);
+  const selectedOrg = useStore(s => s.selectedOrg);
   const setEmailPocIds = useStore(s => s.setEmailPocIds);
   const navigate = useNavigate();
 
