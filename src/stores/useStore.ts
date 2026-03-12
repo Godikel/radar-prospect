@@ -27,6 +27,8 @@ interface Store {
   setIsGenerating: (v: boolean) => void;
   isEnriching: boolean;
   setIsEnriching: (v: boolean) => void;
+  pendingEnrichPocIds: string[];
+  setPendingEnrichPocIds: (ids: string[]) => void;
 
   // Email composer state
   emailPocIds: string[];
