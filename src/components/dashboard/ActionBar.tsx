@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/stores/useStore';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Search, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
