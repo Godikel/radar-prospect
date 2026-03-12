@@ -6,9 +6,16 @@ import OrgSelector from '@/components/dashboard/OrgSelector';
 import CTAButtons from '@/components/dashboard/CTAButtons';
 import CompanyTable from '@/components/dashboard/CompanyTable';
 import ActionBar from '@/components/dashboard/ActionBar';
+import ArchivedBanner from '@/components/dashboard/ArchivedBanner';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const isOrgArchived = (org: { name: string; status?: string } | null) => {
+  if (!org) return false;
+  if (org.status) return org.status === 'archived';
+  return org.name.toLowerCase().includes('legacy');
+};
 
 const Dashboard = () => {
   const selectedOrg = useStore(s => s.selectedOrg);
@@ -16,6 +23,8 @@ const Dashboard = () => {
   const companies = useStore(s => s.companies);
   const isGenerating = useStore(s => s.isGenerating);
   const [isLoading, setIsLoading] = useState(false);
+
+  const archived = isOrgArchived(selectedOrg);
 
   const loadCompanies = async () => {
     if (!selectedOrg) return;
@@ -40,7 +49,10 @@ const Dashboard = () => {
       <Header />
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6 pb-32">
         <OrgSelector />
-        <CTAButtons />
+
+        {selectedOrg && archived && <ArchivedBanner />}
+
+        {!archived && <CTAButtons />}
 
         {selectedOrg && (
           <div className="space-y-3">
@@ -64,7 +76,7 @@ const Dashboard = () => {
           </div>
         )}
       </main>
-      <ActionBar />
+      {!archived && <ActionBar />}
     </div>
   );
 };

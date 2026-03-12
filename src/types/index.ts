@@ -15,10 +15,13 @@ export interface OrgConfig {
   ctas: CTA[];
 }
 
+export type OrgStatus = 'active' | 'archived';
+
 export interface Org {
   id: string;
   name: string;
   subtitle: string;
+  status?: OrgStatus;
   config: OrgConfig;
 }
 
