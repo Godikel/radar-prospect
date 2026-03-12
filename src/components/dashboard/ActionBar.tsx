@@ -57,7 +57,7 @@ const ActionBar = () => {
       const updated = useStore.getState().companies.flatMap(c => c.pocs);
       const tracked = updated.filter(p => enrichedSet.has(p.id));
       const allDone = tracked.every(p =>
-        p.enrichment_status === 'enriched' || p.enrichment_status === 'failed'
+        p.enrichment_status === 'enriched' || p.enrichment_status === 'failed' || p.enrichment_status === 'no_contact'
       );
 
       if (allDone) {
