@@ -54,6 +54,7 @@ const Dashboard = () => {
         {selectedOrg && archived && <ArchivedBanner />}
 
         {!archived && <CTAButtons />}
+        {!archived && <EnrichmentBanner />}
 
         {selectedOrg && (
           <div className="space-y-3">

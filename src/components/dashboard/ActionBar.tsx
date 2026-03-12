@@ -1,10 +1,13 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/stores/useStore';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Search, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const POLL_INTERVAL = 10_000; // 10 seconds
+const POLL_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 const ActionBar = () => {
   const companies = useStore(s => s.companies);
@@ -14,7 +17,19 @@ const ActionBar = () => {
   const setCompanies = useStore(s => s.setCompanies);
   const selectedOrg = useStore(s => s.selectedOrg);
   const setEmailPocIds = useStore(s => s.setEmailPocIds);
+  const setPendingEnrichPocIds = useStore(s => s.setPendingEnrichPocIds);
   const navigate = useNavigate();
+
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const stopPolling = () => {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => () => stopPolling(), []);
 
   if (selectedPocIds.size === 0) return null;
 
@@ -23,15 +38,47 @@ const ActionBar = () => {
   const enrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'enriched');
   const notEnrichedPocs = selectedPocs.filter(p => p.enrichment_status === 'not_enriched');
 
-
   const refreshCompanies = async () => {
     if (!selectedOrg) return;
     try {
       const res = await api.getOrgCompanies(selectedOrg.id);
       setCompanies(res.companies);
     } catch {
-      // silent refresh failure
+      // silent
     }
+  };
+
+  const startPolling = (pocIds: string[]) => {
+    setPendingEnrichPocIds(pocIds);
+    const enrichedSet = new Set(pocIds);
+
+    const check = async () => {
+      await refreshCompanies();
+      const updated = useStore.getState().companies.flatMap(c => c.pocs);
+      const tracked = updated.filter(p => enrichedSet.has(p.id));
+      const allDone = tracked.every(p =>
+        p.enrichment_status === 'enriched' || p.enrichment_status === 'failed'
+      );
+
+      if (allDone) {
+        stopPolling();
+        setIsEnriching(false);
+        setPendingEnrichPocIds([]);
+        const enrichedCount = tracked.filter(p => p.enrichment_status === 'enriched').length;
+        const failedCount = tracked.filter(p => p.enrichment_status === 'failed').length;
+        toast.success(`Enrichment complete: ${enrichedCount} enriched, ${failedCount} failed`);
+      }
+    };
+
+    pollingRef.current = setInterval(check, POLL_INTERVAL);
+
+    // Timeout after 5 minutes
+    timeoutRef.current = setTimeout(() => {
+      stopPolling();
+      setIsEnriching(false);
+      setPendingEnrichPocIds([]);
+      toast.warning('Enrichment is taking longer than expected. Click Refresh to check status.');
+    }, POLL_TIMEOUT);
   };
 
   const handleEnrich = async () => {
@@ -39,38 +86,9 @@ const ActionBar = () => {
     if (pocIds.length === 0) return;
     setIsEnriching(true);
     try {
-      const res = await api.post<any>('/api/pocs/enrich', { poc_ids: pocIds });
-      toast.success(`Enrichment started for ${pocIds.length} POCs. Refreshing data...`);
-
-      // Poll for updated data since enrichment is async
-      let attempts = 0;
-      const maxAttempts = 10;
-      const pollInterval = 3000;
-
-      const poll = async () => {
-        attempts++;
-        await refreshCompanies();
-        
-        // Check if enrichment data has arrived
-        const updatedCompanies = useStore.getState().companies;
-        const enrichedPocIds = new Set(pocIds);
-        const allDone = updatedCompanies
-          .flatMap(c => c.pocs)
-          .filter(p => enrichedPocIds.has(p.id))
-          .every(p => p.enrichment_status === 'enriched' || p.enrichment_status === 'failed');
-
-        if (allDone) {
-          toast.success('Enrichment complete — contact data updated.');
-          setIsEnriching(false);
-        } else if (attempts < maxAttempts) {
-          setTimeout(poll, pollInterval);
-        } else {
-          toast.info('Enrichment is still processing. Hit Refresh to check for updates.');
-          setIsEnriching(false);
-        }
-      };
-
-      setTimeout(poll, pollInterval);
+      await api.post<any>('/api/pocs/enrich', { poc_ids: pocIds });
+      toast.info(`Enriching ${pocIds.length} POCs. This may take 1-5 minutes...`, { duration: 5000 });
+      startPolling(pocIds);
     } catch {
       toast.error('Enrichment failed.');
       setIsEnriching(false);
@@ -98,12 +116,7 @@ const ActionBar = () => {
           </div>
           <div className="flex gap-2 shrink-0">
             {notEnrichedPocs.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleEnrich}
-                disabled={isEnriching}
-              >
+              <Button size="sm" variant="outline" onClick={handleEnrich} disabled={isEnriching}>
                 {isEnriching ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Search className="h-4 w-4 mr-1" />}
                 Enrich {notEnrichedPocs.length} POCs (~{notEnrichedPocs.length} credits)
               </Button>

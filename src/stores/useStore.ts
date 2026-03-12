@@ -103,6 +103,8 @@ export const useStore = create<Store>((set, get) => ({
   setIsGenerating: (v) => set({ isGenerating: v }),
   isEnriching: false,
   setIsEnriching: (v) => set({ isEnriching: v }),
+  pendingEnrichPocIds: [],
+  setPendingEnrichPocIds: (ids) => set({ pendingEnrichPocIds: ids }),
 
   emailPocIds: [],
   setEmailPocIds: (ids) => set({ emailPocIds: ids }),
