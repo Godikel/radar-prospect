@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Org, Company, User, OutreachRecord, OutreachPoc } from '@/types';
+import { getValidPocs } from '@/lib/pocValidation';
 
 interface Store {
   user: User | null;
@@ -83,7 +84,8 @@ export const useStore = create<Store>((set, get) => ({
   selectCompanyPocs: (companyId) => {
     const company = get().companies.find(c => c.id === companyId);
     if (!company) return;
-    const pocIds = company.pocs.map(p => p.id);
+    const validPocs = getValidPocs(company.pocs);
+    const pocIds = validPocs.map(p => p.id);
     const allSelected = pocIds.every(id => get().selectedPocIds.has(id));
     const selected = new Set(get().selectedPocIds);
     pocIds.forEach(id => { if (allSelected) selected.delete(id); else selected.add(id); });

@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ChevronDown, ChevronRight, Search, CheckCircle2, AlertTriangle, XCircle, Loader2, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ContactSelector from './ContactSelector';
+import { getValidPocs } from '@/lib/pocValidation';
 import type { POC } from '@/types';
 
 const enrichmentDisplay = (poc: POC) => {
@@ -62,14 +63,18 @@ const CompanyTable = () => {
     <TooltipProvider>
       <div className="space-y-1">
         {companies.map(company => {
+          const validPocs = getValidPocs(company.pocs);
+          const invalidCount = company.pocs.length - validPocs.length;
           const isExpanded = expandedCompanies.has(company.id);
-          const allPocIds = company.pocs.map(p => p.id);
+          const allPocIds = validPocs.map(p => p.id);
           const allSelected = allPocIds.length > 0 && allPocIds.every(id => selectedPocIds.has(id));
           const someSelected = allPocIds.some(id => selectedPocIds.has(id));
-          const enrichedCount = company.pocs.filter(p => p.enrichment_status === 'enriched').length;
+          const enrichedCount = validPocs.filter(p => p.enrichment_status === 'enriched').length;
+          const noContactCount = validPocs.filter(p => p.enrichment_status === 'no_contact').length;
 
           return (
             <div key={company.id} className="border border-border rounded-lg bg-card overflow-hidden">
+              {/* Company Header */}
               <div
                 className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => toggleCompanyExpand(company.id)}
@@ -78,8 +83,13 @@ const CompanyTable = () => {
                   checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                   onCheckedChange={() => selectCompanyPocs(company.id)}
                   onClick={e => e.stopPropagation()}
+                  disabled={validPocs.length === 0}
                 />
-                {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-foreground">{company.name}</span>
@@ -90,75 +100,113 @@ const CompanyTable = () => {
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {(company.employee_count ?? 0).toLocaleString()} employees • {company.industry ?? 'Unknown'}
-                    {!isExpanded && <span className="ml-2">• {company.pocs.length} POCs ({enrichedCount} enriched)</span>}
                   </div>
                 </div>
+
+                {/* POC Stats */}
+                <div className="text-right shrink-0 hidden sm:block">
+                  <p className="text-sm font-medium text-foreground">
+                    {validPocs.length} POC{validPocs.length !== 1 ? 's' : ''}
+                  </p>
+                  {validPocs.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {enrichedCount} enriched
+                      {noContactCount > 0 && <span> • {noContactCount} no contact</span>}
+                    </p>
+                  )}
+                </div>
+
                 <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">
                   {formatDistanceToNow(new Date(company.generated_at), { addSuffix: true })}
                 </span>
               </div>
 
+              {/* Expanded POC List */}
               {isExpanded && (
                 <div className="border-t border-border bg-muted/30">
-                  <div className="px-4 py-2 text-xs font-medium text-muted-foreground">POCs ({company.pocs.length})</div>
-                  {company.pocs.map(poc => {
-                    const status = enrichmentDisplay(poc);
+                  <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center justify-between">
+                    <span>POCs ({validPocs.length})</span>
+                    {invalidCount > 0 && (
+                      <span className="text-warning text-[11px]">
+                        {invalidCount} invalid POC{invalidCount !== 1 ? 's' : ''} hidden
+                      </span>
+                    )}
+                  </div>
 
-                    return (
-                      <div key={poc.id} className="flex items-center gap-3 px-4 py-2.5 pl-12 hover:bg-muted/50 transition-colors border-t border-border/50">
-                        <Checkbox
-                          checked={selectedPocIds.has(poc.id)}
-                          onCheckedChange={() => togglePoc(poc.id)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm text-foreground">{poc.name}</span>
-                            {poc.title && <span className="text-xs text-muted-foreground">— {poc.title}</span>}
-                            {poc.department && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {poc.department}
-                              </Badge>
+                  {validPocs.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm text-muted-foreground">No valid POCs available</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Try generating POCs again for this company
+                      </p>
+                    </div>
+                  ) : (
+                    validPocs.map(poc => {
+                      const status = enrichmentDisplay(poc);
+
+                      return (
+                        <div
+                          key={poc.id}
+                          className="flex items-center gap-3 px-4 py-2.5 pl-12 hover:bg-muted/50 transition-colors border-t border-border/50"
+                        >
+                          <Checkbox
+                            checked={selectedPocIds.has(poc.id)}
+                            onCheckedChange={() => togglePoc(poc.id)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm text-foreground">{poc.name}</span>
+                              {poc.title && (
+                                <span className="text-xs text-muted-foreground">— {poc.title}</span>
+                              )}
+                              {poc.department && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {poc.department}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                              {poc.enrichment_status === 'enriched' ? (
+                                <>
+                                  <ContactSelector poc={poc} type="email" />
+                                  <ContactSelector poc={poc} type="phone" />
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  {status.icon}
+                                  <span className={`text-xs ${status.className ?? 'text-muted-foreground'}`}>
+                                    {status.label}
+                                  </span>
+                                  {status.tooltip && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs max-w-[200px]">{status.tooltip}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {poc.linkedin_url && (
+                              <a
+                                href={poc.linkedin_url.startsWith('http') ? poc.linkedin_url : `https://${poc.linkedin_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-accent hover:underline mt-0.5 inline-block"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                LinkedIn ↗
+                              </a>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                            {poc.enrichment_status === 'enriched' ? (
-                              <>
-                                <ContactSelector poc={poc} type="email" />
-                                <ContactSelector poc={poc} type="phone" />
-                              </>
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                {status.icon}
-                                <span className={`text-xs ${status.className ?? 'text-muted-foreground'}`}>
-                                  {status.label}
-                                </span>
-                                {status.tooltip && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs max-w-[200px]">{status.tooltip}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {poc.linkedin_url && (
-                            <a
-                              href={poc.linkedin_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-accent hover:underline mt-0.5 inline-block"
-                            >
-                              LinkedIn ↗
-                            </a>
-                          )}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
