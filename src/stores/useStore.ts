@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Org, Company, User, OutreachRecord, OutreachPoc } from '@/types';
+import { getValidPocs } from '@/lib/pocValidation';
 
 interface Store {
   user: User | null;
