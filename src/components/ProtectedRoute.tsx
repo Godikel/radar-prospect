@@ -2,7 +2,12 @@ import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: string[];
+}
+
+const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, hasCheckedAuth, isLoading, user } = useAuthStore();
 
   if (!hasCheckedAuth || isLoading) {
@@ -38,6 +43,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
     );
+  }
+
+  // Role-based access check
+  if (requiredRoles && requiredRoles.length > 0 && user) {
+    const userRole = user.role || '';
+    const hasAccess = user.is_super_admin || requiredRoles.includes(userRole);
+    if (!hasAccess) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="text-center space-y-3 max-w-md">
+            <h1 className="text-xl font-bold text-foreground">Access Denied</h1>
+            <p className="text-sm text-muted-foreground">
+              You don't have permission to access this page.
+            </p>
+            <button
+              onClick={() => window.history.back()}
+              className="text-sm text-accent hover:underline"
+            >
+              Go back
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   return <>{children}</>;
