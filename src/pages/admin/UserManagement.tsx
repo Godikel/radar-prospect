@@ -55,8 +55,8 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const data = await api.get<ManagedUser[]>('/api/users');
-      setUsers(Array.isArray(data) ? data : []);
+      const data = await api.get<{ users: ManagedUser[], total: number }>('/api/users');
+      setUsers(data.users || []);
     } catch {
       toast.error('Failed to load users');
     } finally {
