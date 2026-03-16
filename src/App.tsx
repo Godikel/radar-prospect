@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import EmailComposer from "./pages/EmailComposer";
 import Outreach from "./pages/Outreach";
 import Analytics from "./pages/Analytics";
+import UserManagement from "./pages/admin/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,14 @@ const App = () => {
             <Route path="/emails" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/outreach" element={<ProtectedRoute><Outreach /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute requiredRoles={['super_admin', 'org_admin']}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
