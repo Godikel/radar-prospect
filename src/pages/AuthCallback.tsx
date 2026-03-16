@@ -12,46 +12,36 @@ const AuthCallback = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !session) {
-          throw new Error(sessionError?.message || 'No session found');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (!res.ok) throw new Error('Failed to fetch user profile');
+          const data = await res.json();
+          const user = data.user || data;
+          setSession(
+            {
+              id: user.id || session.user.id,
+              email: user.email || session.user.email || '',
+              name: user.name || session.user.user_metadata?.full_name || '',
+              role: user.role,
+              useCases: user.useCases || [],
+            },
+            session.access_token,
+            session.refresh_token || ''
+          );
+          navigate('/dashboard', { replace: true });
+        } catch (err: any) {
+          console.error('Auth callback error:', err);
+          setError(err.message || 'Authentication failed');
+          setTimeout(() => navigate('/login', { replace: true }), 3000);
         }
-
-        // Call backend /auth/me with Supabase token to get user profile
-        const res = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-
-        if (!res.ok) throw new Error('Failed to fetch user profile');
-
-        const data = await res.json();
-        const user = data.user || data;
-
-        setSession(
-          {
-            id: user.id || session.user.id,
-            email: user.email || session.user.email || '',
-            name: user.name || user.full_name || session.user.user_metadata?.full_name || '',
-            role: user.role,
-            useCases: user.useCases || user.use_cases,
-            is_super_admin: user.is_super_admin,
-          },
-          session.access_token,
-          session.refresh_token || ''
-        );
-
-        navigate('/dashboard', { replace: true });
-      } catch (err: any) {
-        console.error('Auth callback error:', err);
-        setError(err.message || 'Authentication failed');
-        setTimeout(() => navigate('/login', { replace: true }), 3000);
       }
-    };
+    });
 
-    handleCallback();
+    return () => subscription.unsubscribe();
   }, [navigate, setSession]);
 
   if (error) {
