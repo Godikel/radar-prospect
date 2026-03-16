@@ -58,8 +58,8 @@ export const useAuthStore = create<AuthState>()(
           const data = await res.json();
           set({
             user: data.user,
-            accessToken: data.access_token || data.accessToken || data.token,
-            refreshToken: data.refresh_token || data.refreshToken || null,
+            accessToken: data.session?.access_token,
+            refreshToken: data.session?.refresh_token,
             isAuthenticated: true,
             hasCheckedAuth: true,
             isLoading: false,
