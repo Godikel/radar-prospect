@@ -1,4 +1,5 @@
 import type { Org, Company, GenerationRequest, EnrichmentResponse } from '@/types';
+import { useAuthStore } from '@/stores/authStore';
 
 const API_BASE_URL = 'https://leadgen-backend-production-4e93.up.railway.app/api';
 
@@ -52,14 +53,41 @@ function mapCompany(raw: any): Company {
 }
 
 class APIClient {
+  private getAuthHeaders(): Record<string, string> {
+    const token = useAuthStore.getState().accessToken;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  }
+
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
         ...options?.headers,
       },
     });
+
+    if (res.status === 401) {
+      // Try refreshing the token once
+      const refreshed = await useAuthStore.getState().refreshSession();
+      if (refreshed) {
+        const retryRes = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers: {
+            ...this.getAuthHeaders(),
+            ...options?.headers,
+          },
+        });
+        if (retryRes.ok) return retryRes.json();
+      }
+      // Refresh failed — logout and redirect
+      useAuthStore.getState().logout();
+      window.location.href = '/login';
+      throw new Error('Session expired. Please log in again.');
+    }
+
     if (!res.ok) {
       const errorText = await res.text().catch(() => res.statusText);
       throw new Error(`API Error ${res.status}: ${errorText}`);
@@ -123,7 +151,7 @@ class APIClient {
     });
   }
 
-  // Legacy compatibility
+  // Convenience methods
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint.replace(/^\/api/, ''));
   }
@@ -132,6 +160,19 @@ class APIClient {
     return this.request<T>(endpoint.replace(/^\/api/, ''), {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async patch<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint.replace(/^\/api/, ''), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint.replace(/^\/api/, ''), {
+      method: 'DELETE',
     });
   }
 }

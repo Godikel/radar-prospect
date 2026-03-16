@@ -1,12 +1,8 @@
 import { create } from 'zustand';
-import type { Org, Company, User, OutreachRecord, OutreachPoc } from '@/types';
+import type { Org, Company, OutreachRecord, OutreachPoc } from '@/types';
 import { getValidPocs } from '@/lib/pocValidation';
 
 interface Store {
-  user: User | null;
-  login: (email: string) => boolean;
-  logout: () => void;
-
   orgs: Org[];
   setOrgs: (orgs: Org[]) => void;
   selectedOrg: Org | null;
@@ -43,16 +39,6 @@ interface Store {
 }
 
 export const useStore = create<Store>((set, get) => ({
-  user: null,
-  login: (email: string) => {
-    if (email === 'hardik.goel@skillbetter.co.in') {
-      set({ user: { email, name: 'Hardik Goel' } });
-      return true;
-    }
-    return false;
-  },
-  logout: () => set({ user: null }),
-
   orgs: [],
   setOrgs: (orgs) => set({ orgs }),
   selectedOrg: null,
