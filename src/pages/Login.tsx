@@ -10,6 +10,13 @@ import { Rocket, AlertCircle, Loader2 } from 'lucide-react';
 const API_BASE = 'https://leadgen-backend-production-4e93.up.railway.app';
 
 const Login = () => {
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+      window.location.href = '/auth/callback' + hash;
+    }
+  }, []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
