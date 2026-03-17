@@ -22,6 +22,11 @@ const App = () => {
   const checkAuthOnBoot = useAuthStore(s => s.checkAuthOnBoot);
 
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+      window.location.href = '/auth/callback' + hash;
+      return;
+    }
     checkAuthOnBoot();
   }, [checkAuthOnBoot]);
 
