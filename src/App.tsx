@@ -18,15 +18,19 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Intercept auth hash tokens BEFORE React renders — must run synchronously
+if (typeof window !== 'undefined') {
+  const hash = window.location.hash;
+  const path = window.location.pathname;
+  if (hash && path !== '/auth/callback' && (hash.includes('access_token') || hash.includes('error=') || hash.includes('type='))) {
+    window.location.replace('/auth/callback' + hash);
+  }
+}
+
 const App = () => {
   const checkAuthOnBoot = useAuthStore(s => s.checkAuthOnBoot);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-      window.location.href = '/auth/callback' + hash;
-      return;
-    }
     checkAuthOnBoot();
   }, [checkAuthOnBoot]);
 
