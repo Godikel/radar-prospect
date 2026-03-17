@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import Header from '@/components/layout/Header';
+import InviteUserDialog from '@/components/admin/InviteUserDialog';
+import AssignOrgDialog from '@/components/admin/AssignOrgDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -14,13 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   Table,
   TableBody,
   TableCell,
@@ -28,9 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Plus, Search, UserCheck, UserX } from 'lucide-react';
+import { Loader2, Search, UserCheck, UserX, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+
+interface UserUseCase {
+  use_case_id: string;
+  role: string;
+  use_cases?: { name: string };
+}
 
 interface ManagedUser {
   id: string;
@@ -39,6 +39,7 @@ interface ManagedUser {
   role: string;
   is_active: boolean;
   last_login?: string;
+  user_use_cases?: UserUseCase[];
 }
 
 const ROLES = ['agent', 'manager', 'org_admin', 'super_admin'];
@@ -48,14 +49,12 @@ const UserManagement = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: 'user' });
-  const [inviting, setInviting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [assignTarget, setAssignTarget] = useState<ManagedUser | null>(null);
 
   const fetchUsers = async () => {
     try {
-      const data = await api.get<{ users: ManagedUser[], total: number }>('/api/users');
+      const data = await api.get<{ users: ManagedUser[]; total: number }>('/api/users');
       setUsers(data.users || []);
     } catch {
       toast.error('Failed to load users');
@@ -103,88 +102,20 @@ const UserManagement = () => {
     }
   };
 
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteForm.email || !inviteForm.name) return;
-    setInviting(true);
-    try {
-      await api.post('/api/users/invite', inviteForm);
-      toast.success('Invitation sent');
-      setInviteOpen(false);
-      setInviteForm({ email: '', name: '', role: 'user' });
-      fetchUsers();
-    } catch {
-      toast.error('Failed to send invitation');
-    } finally {
-      setInviting(false);
-    }
-  };
-
   const isSelf = (userId: string) => currentUser?.id === userId;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground">User Management</h1>
-            <p className="text-sm text-muted-foreground">Manage team members and their roles</p>
+            <p className="text-sm text-muted-foreground">Manage team members, roles, and organization assignments</p>
           </div>
-
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-1.5">
-                <Plus className="h-4 w-4" />
-                Invite User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Invite User</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleInvite} className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input
-                    placeholder="Full name"
-                    value={inviteForm.name}
-                    onChange={e => setInviteForm(f => ({ ...f, name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="user@company.com"
-                    value={inviteForm.email}
-                    onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={inviteForm.role} onValueChange={v => setInviteForm(f => ({ ...f, role: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map(r => (
-                        <SelectItem key={r} value={r}>{r.replace(/_/g, ' ')}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                  <Button type="submit" className="bg-accent text-accent-foreground hover:bg-accent/90" disabled={inviting}>
-                    {inviting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
-                    Send Invite
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <InviteUserDialog onInvited={fetchUsers} />
         </div>
 
-        {/* Search */}
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -195,7 +126,6 @@ const UserManagement = () => {
           />
         </div>
 
-        {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
@@ -212,6 +142,7 @@ const UserManagement = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Organizations</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Login</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -250,6 +181,28 @@ const UserManagement = () => {
                       )}
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(u.user_use_cases ?? []).length > 0 ? (
+                          (u.user_use_cases ?? []).map(uc => (
+                            <Badge key={uc.use_case_id} variant="outline" className="text-[10px] px-1.5 py-0">
+                              {uc.use_cases?.name || uc.use_case_id}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">None</span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 ml-1"
+                          onClick={() => setAssignTarget(u)}
+                          title="Assign organizations"
+                        >
+                          <Building2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant={u.is_active ? 'default' : 'secondary'}
                         className="text-xs"
@@ -286,6 +239,17 @@ const UserManagement = () => {
               </TableBody>
             </Table>
           </div>
+        )}
+
+        {assignTarget && (
+          <AssignOrgDialog
+            open={!!assignTarget}
+            onOpenChange={open => { if (!open) setAssignTarget(null); }}
+            userId={assignTarget.id}
+            userName={assignTarget.name}
+            currentAssignments={assignTarget.user_use_cases ?? []}
+            onSaved={fetchUsers}
+          />
         )}
       </main>
     </div>
