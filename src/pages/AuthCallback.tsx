@@ -14,7 +14,7 @@ const AuthCallback = () => {
   useEffect(() => {
     let handled = false;
 
-    const processSession = async (session: any) => {
+    const processSession = async (session: any, needsPassword = false) => {
       if (handled) return;
       handled = true;
       try {
@@ -35,7 +35,11 @@ const AuthCallback = () => {
           session.access_token,
           session.refresh_token || ''
         );
-        navigate('/', { replace: true });
+        if (needsPassword) {
+          navigate('/auth/set-password', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       } catch (err: any) {
         setError(err.message || 'Authentication failed');
         setTimeout(() => navigate('/login', { replace: true }), 3000);
@@ -44,8 +48,12 @@ const AuthCallback = () => {
 
     // Listen for auth state changes (covers PKCE, invite, magic link flows)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED')) {
-        processSession(session);
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+        processSession(session, false);
+      }
+      if (session && event === 'PASSWORD_RECOVERY') {
+        // Invited user or password reset — redirect to set password
+        processSession(session, true);
       }
     });
 
