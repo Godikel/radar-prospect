@@ -34,6 +34,7 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/set-password" element={<SetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/emails" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/outreach" element={<ProtectedRoute><Outreach /></ProtectedRoute>} />
