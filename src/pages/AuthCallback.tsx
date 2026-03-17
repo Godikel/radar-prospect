@@ -13,6 +13,8 @@ const AuthCallback = () => {
 
   useEffect(() => {
     let handled = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
 
     const processSession = async (session: any, needsPassword = false) => {
       if (handled) return;
@@ -46,33 +48,60 @@ const AuthCallback = () => {
       }
     };
 
-    // Listen for auth state changes (covers PKCE, invite, magic link flows)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-        processSession(session, false);
-      }
-      if (session && event === 'PASSWORD_RECOVERY') {
-        // Invited user or password reset — redirect to set password
-        processSession(session, true);
-      }
-    });
+    const handleAuth = async () => {
+      // Check for tokens in URL hash (invite links, magic links)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
 
-    // Also try getSession (covers hash fragment flow)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) processSession(session);
-    });
-
-    // Timeout — if nothing happens in 10 seconds, redirect to login
-    const timeout = setTimeout(() => {
-      if (!handled) {
-        setError('Sign-in timed out. Please try again.');
-        setTimeout(() => navigate('/login', { replace: true }), 2000);
+      if (accessToken && refreshToken) {
+        try {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          if (data.session) {
+            const needsPassword = type === 'invite' || type === 'recovery';
+            await processSession(data.session, needsPassword);
+            return;
+          }
+        } catch (err: any) {
+          console.error('Hash token session failed:', err);
+        }
       }
-    }, 10000);
+
+      // Listen for auth state changes (covers PKCE, invite, magic link flows)
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+          processSession(session, false);
+        }
+        if (session && event === 'PASSWORD_RECOVERY') {
+          processSession(session, true);
+        }
+      });
+      subscription = sub;
+
+      // Also try getSession (covers hash fragment flow)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) processSession(session);
+      });
+
+      // Timeout — if nothing happens in 10 seconds, redirect to login
+      timeout = setTimeout(() => {
+        if (!handled) {
+          setError('Sign-in timed out. Please try again.');
+          setTimeout(() => navigate('/login', { replace: true }), 2000);
+        }
+      }, 10000);
+    };
+
+    handleAuth();
 
     return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
+      subscription?.unsubscribe();
+      if (timeout) clearTimeout(timeout);
     };
   }, [navigate, setSession]);
 
