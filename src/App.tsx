@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/stores/authStore";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import SetPassword from "./pages/SetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import EmailComposer from "./pages/EmailComposer";
