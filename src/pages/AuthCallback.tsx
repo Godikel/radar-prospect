@@ -26,35 +26,46 @@ const AuthCallback = () => {
         const user = data.user || data;
         setSession(
           {
-            id: user.id || session.user.id,
-            email: user.email || session.user.email || '',
-            name: user.name || session.user.user_metadata?.full_name || '',
+            id: user.id || session.user?.id,
+            email: user.email || session.user?.email || '',
+            name: user.name || session.user?.user_metadata?.full_name || '',
             role: user.role,
             useCases: user.useCases || [],
           },
           session.access_token,
           session.refresh_token || ''
         );
-        navigate('/dashboard', { replace: true });
+        navigate('/', { replace: true });
       } catch (err: any) {
         setError(err.message || 'Authentication failed');
         setTimeout(() => navigate('/login', { replace: true }), 3000);
       }
     };
 
-    // Listen for auth state change (handles PKCE code exchange)
+    // Listen for auth state changes (covers PKCE, invite, magic link flows)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED')) {
         processSession(session);
       }
     });
 
-    // Also try getSession directly (handles hash fragment flow)
+    // Also try getSession (covers hash fragment flow)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) processSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    // Timeout — if nothing happens in 10 seconds, redirect to login
+    const timeout = setTimeout(() => {
+      if (!handled) {
+        setError('Sign-in timed out. Please try again.');
+        setTimeout(() => navigate('/login', { replace: true }), 2000);
+      }
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [navigate, setSession]);
 
   if (error) {
