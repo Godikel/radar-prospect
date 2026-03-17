@@ -41,7 +41,7 @@ interface ManagedUser {
   last_login?: string;
 }
 
-const ROLES = ['user', 'org_admin', 'super_admin'];
+const ROLES = ['agent', 'manager', 'org_admin', 'super_admin'];
 
 const UserManagement = () => {
   const currentUser = useAuthStore(s => s.user);
