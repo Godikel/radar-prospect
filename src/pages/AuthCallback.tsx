@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/stores/authStore';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores/authStore";
+import { Loader2 } from "lucide-react";
 
-const API_BASE = 'https://leadgen-backend-production-4e93.up.railway.app';
+const API_BASE = "https://leadgen-backend-production-4e93.up.railway.app";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const setSession = useAuthStore(s => s.setSession);
-  const [error, setError] = useState('');
+  const setSession = useAuthStore((s) => s.setSession);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let handled = false;
-    let subscription: { unsubscribe: () => void } | null = null;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
 
     const processSession = async (session: any, needsPassword = false) => {
       if (handled) return;
@@ -23,37 +21,45 @@ const AuthCallback = () => {
         const res = await fetch(`${API_BASE}/api/auth/me`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        if (!res.ok) throw new Error('Failed to fetch user profile');
+        if (!res.ok) throw new Error("Failed to fetch user profile");
         const data = await res.json();
         const user = data.user || data;
         setSession(
           {
             id: user.id || session.user?.id,
-            email: user.email || session.user?.email || '',
-            name: user.name || session.user?.user_metadata?.full_name || '',
+            email: user.email || session.user?.email || "",
+            name: user.name || session.user?.user_metadata?.full_name || "",
             role: user.role,
             useCases: user.useCases || [],
           },
           session.access_token,
-          session.refresh_token || ''
+          session.refresh_token || "",
         );
         if (needsPassword) {
-          navigate('/auth/set-password', { replace: true });
+          navigate("/auth/set-password", { replace: true });
         } else {
-          navigate('/', { replace: true });
+          navigate("/", { replace: true });
         }
       } catch (err: any) {
-        setError(err.message || 'Authentication failed');
-        setTimeout(() => navigate('/login', { replace: true }), 3000);
+        setError(err.message || "Authentication failed");
+        setTimeout(() => navigate("/login", { replace: true }), 3000);
       }
     };
 
     const handleAuth = async () => {
-      // Check for tokens in URL hash (invite links, magic links)
+      // 1. Check for errors in URL hash
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      const type = hashParams.get('type');
+      const hashError = hashParams.get("error_description") || hashParams.get("error");
+      if (hashError) {
+        setError(decodeURIComponent(hashError.replace(/\+/g, " ")));
+        setTimeout(() => navigate("/login", { replace: true }), 3000);
+        return;
+      }
+
+      // 2. Check for tokens in URL hash (invite links, magic links)
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
 
       if (accessToken && refreshToken) {
         try {
@@ -63,46 +69,52 @@ const AuthCallback = () => {
           });
           if (sessionError) throw sessionError;
           if (data.session) {
-            const needsPassword = type === 'invite' || type === 'recovery';
+            const needsPassword = type === "invite" || type === "recovery";
             await processSession(data.session, needsPassword);
             return;
           }
         } catch (err: any) {
-          console.error('Hash token session failed:', err);
+          console.error("Hash token session failed:", err);
         }
       }
 
-      // Listen for auth state changes (covers PKCE, invite, magic link flows)
-      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-          processSession(session, false);
+      // 3. Check for PKCE code in URL query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+      if (code) {
+        try {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          if (data.session) {
+            const codeType = urlParams.get("type");
+            const needsPassword = codeType === "invite" || codeType === "recovery";
+            await processSession(data.session, needsPassword);
+            return;
+          }
+        } catch (err: any) {
+          console.error("Code exchange failed:", err);
         }
-        if (session && event === 'PASSWORD_RECOVERY') {
-          processSession(session, true);
-        }
-      });
-      subscription = sub;
+      }
 
-      // Also try getSession (covers hash fragment flow)
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) processSession(session);
-      });
+      // 4. Fallback — try getSession
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        await processSession(session);
+        return;
+      }
 
-      // Timeout — if nothing happens in 10 seconds, redirect to login
-      timeout = setTimeout(() => {
+      // 5. Timeout if nothing worked
+      setTimeout(() => {
         if (!handled) {
-          setError('Sign-in timed out. Please try again.');
-          setTimeout(() => navigate('/login', { replace: true }), 2000);
+          setError("Sign-in timed out. Please try again.");
+          setTimeout(() => navigate("/login", { replace: true }), 2000);
         }
       }, 10000);
     };
 
     handleAuth();
-
-    return () => {
-      subscription?.unsubscribe();
-      if (timeout) clearTimeout(timeout);
-    };
   }, [navigate, setSession]);
 
   if (error) {
